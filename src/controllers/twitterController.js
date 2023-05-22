@@ -17,8 +17,3 @@ export const tweet = catchAsync(async (req, res) => {})
 export const like = catchAsync(async (req, res) => {})
 
 export const unlike = catchAsync(async (req, res) => {})
-
-export const comment = catchAsync(async (req, res) => {})
-
-
-
