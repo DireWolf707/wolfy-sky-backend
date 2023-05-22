@@ -3,7 +3,7 @@ import { pgTable, text, timestamp, uniqueIndex, index, uuid, varchar, primaryKey
 import { createInsertSchema } from "drizzle-zod"
 
 export const userT = pgTable(
-  "users",
+  "User",
   {
     id: uuid("id").defaultRandom().primaryKey(),
     email: varchar("email", { length: 256 }).notNull(),
@@ -21,7 +21,7 @@ export const userT = pgTable(
 export const userSchema = createInsertSchema(userT)
 
 export const tweetT = pgTable(
-  "tweets",
+  "Tweet",
   {
     id: uuid("id").defaultRandom().primaryKey(),
     content: text("content").notNull(),
@@ -41,7 +41,7 @@ export const tweetT = pgTable(
 export const tweetSchema = createInsertSchema(tweetT)
 
 export const notificationT = pgTable(
-  "notifications",
+  "Notification",
   {
     id: uuid("id").defaultRandom().primaryKey(),
     type: varchar("type", { length: 12, enum: ["like", "comment", "follow"] }).notNull(),
@@ -59,7 +59,7 @@ export const notificationT = pgTable(
 )
 
 export const followT = pgTable(
-  "follows",
+  "Follow",
   {
     to: uuid("to")
       .notNull()
