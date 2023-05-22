@@ -1,3 +1,4 @@
 import userRouter from "./userRouter"
+import twitterRouter from "./twitterRouter"
 
-export { userRouter }
+export { userRouter, twitterRouter }

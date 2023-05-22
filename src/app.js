@@ -4,7 +4,7 @@ import helmet from "helmet"
 import compression from "compression"
 import errorController from "./controllers/errorController"
 import { AppError } from "./utils"
-import { userRouter } from "./routers"
+import { userRouter, twitterRouter } from "./routers"
 import { corsMiddleware, morganMiddleware, fileuploadMiddleware, sessionMiddleware } from "./middlewares/global"
 
 // Express app Init
@@ -36,6 +36,7 @@ app.use(passport.session())
 // Custom middlewares: app.use((req, res, next) => {next()})
 // Routes
 app.use("/user", userRouter)
+app.use("/twitter", twitterRouter)
 // 404 Handler
 app.all("*", (req, res, next) => next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404)))
 // Error Handler
