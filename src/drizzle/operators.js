@@ -21,6 +21,8 @@ export {
   and,
   or,
   sql,
+  asc,
+  desc,
 } from "drizzle-orm"
 
 import { sql } from "drizzle-orm"
