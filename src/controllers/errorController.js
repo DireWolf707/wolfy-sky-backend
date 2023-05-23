@@ -4,7 +4,7 @@ const handlePayloadTooLargeError = () => new AppError("payload too large")
 const handleCastErrorDB = () => new AppError("invalid data")
 const handleLongValueErrorDB = () => new AppError("data too long")
 const handleUniqueConstraintErrorDB = ({ message: errMsg }) => {
-  const field = errMsg.substring(errMsg.indexOf('"') + 1, errMsg.lastIndexOf('"')).split("_")[0]
+  const field = errMsg.split('"')[1]
   const error = `${field}:${field} is already in use`
   return new AppError(error)
 }
