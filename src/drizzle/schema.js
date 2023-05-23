@@ -1,5 +1,6 @@
 export * from "./operators"
-import { pgTable, text, timestamp, uniqueIndex, index, uuid, varchar, primaryKey } from "drizzle-orm/pg-core"
+export { alias } from "drizzle-orm/pg-core"
+import { pgTable, text, timestamp, uniqueIndex, index, uuid, varchar, primaryKey, foreignKey } from "drizzle-orm/pg-core"
 import { createInsertSchema } from "drizzle-zod"
 
 export const userT = pgTable(
@@ -30,11 +31,16 @@ export const tweetT = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => userT.id),
-    parentTweetId: uuid("parent_tweet_id").references(() => tweetT.id),
+    parentTweetId: uuid("parent_tweet_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (tweetT) => ({
     userIdx: index("user_idx").on(tweetT.userId),
     parentTweetIdx: index("parent_tweet_idx").on(tweetT.parentTweetId),
+    parentTweetRef: foreignKey({
+      columns: [tweetT.parentTweetId],
+      foreignColumns: [tweetT.id],
+    }),
   })
 )
 
@@ -52,6 +58,7 @@ export const notificationT = pgTable(
       .notNull()
       .references(() => userT.id),
     tweetId: uuid("tweet_id").references(() => tweetT.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (notificationT) => ({
     userIdx: index("user_idx").on(notificationT.to),
@@ -70,5 +77,20 @@ export const followT = pgTable(
   },
   (followT) => ({
     pk: primaryKey(followT.to, followT.from),
+  })
+)
+
+export const likeT = pgTable(
+  "Like",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => userT.id),
+    tweetId: uuid("tweet_id")
+      .notNull()
+      .references(() => tweetT.id),
+  },
+  (likeT) => ({
+    pk: primaryKey(likeT.userId, likeT.tweetId),
   })
 )
