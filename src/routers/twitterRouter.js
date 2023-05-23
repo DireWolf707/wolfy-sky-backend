@@ -1,5 +1,17 @@
 import express from "express"
-import { getFeed, getNotifications, getPublicProfile, getTweet, search, tweet, like, unlike } from "../controllers/twitterController"
+import {
+  getFeed,
+  getNotifications,
+  getPublicProfile,
+  getTweet,
+  search,
+  createTweet,
+  like,
+  unlike,
+  follow,
+  unfollow,
+  getFollowRecomendations,
+} from "../controllers/twitterController"
 import { isAuthenticated } from "../middlewares/auth"
 
 const router = express.Router()
@@ -8,9 +20,12 @@ router.use(isAuthenticated)
 router.get("/feed", getFeed)
 router.get("/search", search)
 router.get("/notifications", getNotifications)
-router.get("/public-profile/:userId", getPublicProfile)
-router.post("/tweet", tweet)
+router.get("/recomendations", getFollowRecomendations)
+router.get("/profile/:userId", getPublicProfile)
+router.route("/profile/:userId/follow").post(follow).delete(unfollow)
+router.post("/tweet", createTweet)
 router.get("/tweet/:tweetId", getTweet)
+router.post("/tweet/:tweetId/reply", createTweet)
 router.route("/tweet/:tweetId/like").post(like).delete(unlike)
 
 export default router
