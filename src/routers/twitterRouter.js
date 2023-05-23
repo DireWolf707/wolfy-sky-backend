@@ -1,11 +1,12 @@
 import express from "express"
-import { getFeed, getNotifications, getPublicProfile, getTweet, tweet, like, unlike } from "../controllers/twitterController"
+import { getFeed, getNotifications, getPublicProfile, getTweet, search, tweet, like, unlike } from "../controllers/twitterController"
 import { isAuthenticated } from "../middlewares/auth"
 
 const router = express.Router()
 router.use(isAuthenticated)
 
 router.get("/feed", getFeed)
+router.get("/search", search)
 router.get("/notifications", getNotifications)
 router.get("/public-profile/:userId", getPublicProfile)
 router.post("/tweet", tweet)

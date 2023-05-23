@@ -12,6 +12,8 @@ export const getPublicProfile = catchAsync(async (req, res) => {})
 
 export const getNotifications = catchAsync(async (req, res) => {})
 
+export const search = catchAsync(async (req, res) => {})
+
 export const tweet = catchAsync(async (req, res) => {})
 
 export const like = catchAsync(async (req, res) => {})
