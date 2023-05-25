@@ -1,30 +1,7 @@
-export {
-  eq,
-  ne,
-  gt,
-  gte,
-  lt,
-  lte,
-  isNull,
-  isNotNull,
-  inArray,
-  notInArray,
-  exists,
-  notExists,
-  between,
-  notBetween,
-  like,
-  notLike,
-  ilike,
-  notIlike,
-  not,
-  and,
-  or,
-  sql,
-  asc,
-  desc,
-} from "drizzle-orm"
-
+export { alias } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const arrayAgg = (table, nonNullableField) => sql`coalesce(json_agg(${table}) filter (where ${nonNullableField} is not null), '[]')`
+
+export const arrayAggOrder = (table, orderByField, nonNullableField) =>
+  sql`coalesce(json_agg(${table} order by ${orderByField} desc) filter (where ${nonNullableField} is not null), '[]')`

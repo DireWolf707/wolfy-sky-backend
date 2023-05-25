@@ -1,7 +1,8 @@
 import passport from "passport"
 import db from "./db"
 import { Strategy as GoogleStrategy } from "passport-google-oauth20"
-import { userT, userSchema, eq } from "../drizzle/schema"
+import { userT, userSchema } from "../drizzle/schema"
+import { eq } from "drizzle-orm"
 import { randomString, slugify } from "../utils"
 
 passport.use(

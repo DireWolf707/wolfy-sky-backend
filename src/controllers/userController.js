@@ -1,6 +1,7 @@
 import { catchAsync, slugify } from "../utils"
 import { db, storage } from "../configs"
-import { userT, userSchema, eq } from "../drizzle/schema"
+import { userT, userSchema } from "../drizzle/schema"
+import { eq } from "drizzle-orm"
 import { imageInput } from "../validators"
 import { sessionOptions } from "../middlewares/global"
 import { io } from "../socket"
