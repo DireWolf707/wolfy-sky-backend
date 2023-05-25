@@ -4,6 +4,7 @@ import { userT, followT, tweetT, likeT, notificationT, tweetSchema, arrayAggOrde
 import { eq, ne, ilike, and, sql, desc } from "drizzle-orm"
 import { mediaInput } from "../validators"
 import { io } from "../socket"
+import { v4 as uuid } from "uuid"
 
 export const getFeed = catchAsync(async (req, res) => {
   const { id } = req.user
@@ -140,6 +141,14 @@ export const search = catchAsync(async (req, res) => {
 export const createTweet = catchAsync(async (req, res) => {
   const { id } = req.user
   const { parentTweetId } = req.body
+
+  if (req?.files?.media) {
+    const [media, mediaType] = mediaInput(req.files.media)
+    const mediaURL = await storage.upload(uuid(), media.data)
+
+    req.body.mediaType = mediaType
+    req.body.mediaURL = mediaURL
+  }
 
   const data = tweetSchema.parse({ ...req.body, userId: id })
   const [tweet] = await db.insert(tweetT).values(data).returning()

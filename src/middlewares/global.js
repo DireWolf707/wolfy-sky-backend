@@ -18,7 +18,7 @@ export const morganMiddleware = () => {
 }
 
 export const fileuploadMiddleware = fileupload({
-  limits: { fileSize: 3 * 2 ** 20 },
+  limits: { fileSize: 8 * 2 ** 20 },
   limitHandler: (req, res, next) => next(new AppError("file size must be smaller than 3 MB")),
   useTempFiles: false,
   // tempFileDir: "/tmp/",
