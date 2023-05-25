@@ -39,7 +39,7 @@ export const getFollowRecomendations = catchAsync(async (req, res) => {
   const whoToFollow = await db
     .select({ ...userT })
     .from(followT)
-    .innerJoin(f2fT, and(eq(id, followT.from), eq(followT.to, f2fT.from), ne(f2fT.to, id)))
+    .innerJoin(f2fT, and(eq(id, followT.from), eq(followT.to, f2fT.from), ne(f2fT.from, f2fT.to), ne(f2fT.to, id)))
     .leftJoin(userT, eq(f2fT.to, userT.id))
     .groupBy(userT.id, f2fT.createdAt) // to get distinct users
     .orderBy(desc(f2fT.createdAt))
@@ -82,8 +82,8 @@ export const getPublicProfile = catchAsync(async (req, res) => {
   const userQ = db
     .select({
       ...userT,
-      followers: sql`(select count(*) from ${followT} where ${followT.to} = ${userId})`,
-      following: sql`(select count(*) from ${followT} where ${followT.from} = ${userId})`,
+      followers: sql`(select count(*)-1 from ${followT} where ${followT.to} = ${userId})`,
+      following: sql`(select count(*)-1 from ${followT} where ${followT.from} = ${userId})`,
       isFollowed: sql`(select count(*) from ${followT} where ${followT.from} = ${id} and ${followT.to} = ${userId})`,
     })
     .from(userT)
@@ -157,9 +157,11 @@ export const createTweet = catchAsync(async (req, res) => {
     db.select()
       .from(tweetT)
       .where(eq(parentTweetId, tweetT.id))
-      .then(([tweet]) =>
-        db
-          .insert(notificationT)
+      .then(([tweet]) => {
+        // check if self reply
+        if (tweet.userId === id) return
+
+        db.insert(notificationT)
           .values({
             type: "comment",
             to: tweet.userId,
@@ -167,7 +169,7 @@ export const createTweet = catchAsync(async (req, res) => {
             tweetId: tweet.id,
           })
           .then(console.log)
-      )
+      })
 
   res.json({ data: { ...tweet, user: req.user } })
 })
@@ -181,9 +183,11 @@ export const like = catchAsync(async (req, res) => {
   db.select()
     .from(tweetT)
     .where(eq(tweetId, tweetT.id))
-    .then(([tweet]) =>
-      db
-        .insert(notificationT)
+    .then(([tweet]) => {
+      // check if self like
+      if (tweet.userId === id) return
+
+      db.insert(notificationT)
         .values({
           type: "like",
           to: tweet.userId,
@@ -191,7 +195,7 @@ export const like = catchAsync(async (req, res) => {
           tweetId: tweet.id,
         })
         .then(console.log)
-    )
+    })
 
   res.end()
 })
