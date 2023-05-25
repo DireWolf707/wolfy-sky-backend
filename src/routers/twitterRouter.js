@@ -4,6 +4,7 @@ import {
   getNotifications,
   getPublicProfile,
   getTweet,
+  getComments,
   search,
   createTweet,
   like,
@@ -25,7 +26,7 @@ router.get("/profile/:userId", getPublicProfile)
 router.route("/profile/:userId/follow").post(follow).delete(unfollow)
 router.post("/tweet", createTweet)
 router.get("/tweet/:tweetId", getTweet)
-router.post("/tweet/:tweetId/reply", createTweet)
+router.get("/tweet/:tweetId/comments", getComments)
 router.route("/tweet/:tweetId/like").post(like).delete(unlike)
 
 export default router
