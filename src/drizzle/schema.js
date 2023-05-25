@@ -1,5 +1,6 @@
 export * from "./operators"
-export { alias } from "drizzle-orm/pg-core"
+import { relations } from "drizzle-orm"
+import { alias } from "drizzle-orm/pg-core"
 import { pgTable, text, timestamp, uniqueIndex, index, uuid, varchar, primaryKey, foreignKey } from "drizzle-orm/pg-core"
 import { createInsertSchema } from "drizzle-zod"
 
@@ -19,6 +20,10 @@ export const userT = pgTable(
   })
 )
 
+export const userRelations = relations(userT, ({ one, many }) => ({
+  tweets: many(tweetT),
+}))
+
 export const userSchema = createInsertSchema(userT)
 
 export const tweetT = pgTable(
@@ -35,16 +40,38 @@ export const tweetT = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (tweetT) => ({
-    userIdx: index("user_idx").on(tweetT.userId),
-    parentTweetIdx: index("parent_tweet_idx").on(tweetT.parentTweetId),
     parentTweetRef: foreignKey({
       columns: [tweetT.parentTweetId],
       foreignColumns: [tweetT.id],
     }),
+    userIdx: index("user_idx").on(tweetT.userId),
+    parentTweetIdx: index("parent_tweet_idx").on(tweetT.parentTweetId),
   })
 )
 
 export const tweetSchema = createInsertSchema(tweetT)
+
+export const tweetRelations = relations(tweetT, ({ one, many }) => ({
+  user: one(userT, {
+    fields: [tweetT.userId],
+    references: [userT.id],
+  }),
+  comments: many(commentTweetT),
+  isLiked: many(likeT),
+}))
+
+export const commentTweetT = alias(tweetT, "commentTweetT")
+
+export const commentTweetRelations = relations(commentTweetT, ({ one, many }) => ({
+  user: one(userT, {
+    fields: [commentTweetT.userId],
+    references: [userT.id],
+  }),
+  parentTweet: one(tweetT, {
+    fields: [commentTweetT.parentTweetId],
+    references: [tweetT.id],
+  }),
+}))
 
 export const notificationT = pgTable(
   "Notification",
@@ -74,6 +101,7 @@ export const followT = pgTable(
     from: uuid("from")
       .notNull()
       .references(() => userT.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (followT) => ({
     pk: primaryKey(followT.to, followT.from),
@@ -94,3 +122,10 @@ export const likeT = pgTable(
     pk: primaryKey(likeT.userId, likeT.tweetId),
   })
 )
+
+export const likeRelations = relations(likeT, ({ one, many }) => ({
+  tweet: one(tweetT, {
+    fields: [likeT.tweetId],
+    references: [tweetT.id],
+  }),
+}))
