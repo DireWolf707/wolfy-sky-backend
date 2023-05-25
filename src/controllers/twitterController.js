@@ -169,7 +169,7 @@ export const createTweet = catchAsync(async (req, res) => {
           .then(console.log)
       )
 
-  res.json({ data: tweet })
+  res.json({ data: { ...tweet, user: req.user } })
 })
 
 export const like = catchAsync(async (req, res) => {
