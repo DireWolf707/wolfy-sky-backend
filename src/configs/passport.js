@@ -1,7 +1,7 @@
 import passport from "passport"
 import db from "./db"
 import { Strategy as GoogleStrategy } from "passport-google-oauth20"
-import { userT, userSchema } from "../drizzle/schema"
+import { userT, userSchema, followT } from "../drizzle/schema"
 import { eq } from "drizzle-orm"
 import { randomString, slugify } from "../utils"
 
@@ -21,6 +21,8 @@ passport.use(
         if (!user) {
           const data = userSchema.parse({ email, name, username: slugify(`${name} ${randomString()}`) })
           user = (await db.insert(userT).values(data).returning())[0]
+          // self follow (until union availabe!)
+          await db.insert(followT).values({ to: user.id, from: user.id })
         }
         cb(null, user)
       } catch (err) {
