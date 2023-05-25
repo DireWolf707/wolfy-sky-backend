@@ -139,9 +139,26 @@ export const search = catchAsync(async (req, res) => {
 
 export const createTweet = catchAsync(async (req, res) => {
   const { id } = req.user
+  const { parentTweetId } = req.body
 
   const data = tweetSchema.parse({ ...req.body, userId: id })
   const [tweet] = await db.insert(tweetT).values(data).returning()
+
+  if (parentTweetId)
+    db.select()
+      .from(tweetT)
+      .where(eq(parentTweetId, tweetT.id))
+      .then(([tweet]) =>
+        db
+          .insert(notificationT)
+          .values({
+            type: "comment",
+            to: tweet.userId,
+            from: id,
+            tweetId: tweet.id,
+          })
+          .then(console.log)
+      )
 
   res.json({ data: tweet })
 })
@@ -151,6 +168,21 @@ export const like = catchAsync(async (req, res) => {
   const { tweetId } = req.params
 
   await db.insert(likeT).values({ userId: id, tweetId })
+
+  db.select()
+    .from(tweetT)
+    .where(eq(tweetId, tweetT.id))
+    .then(([tweet]) =>
+      db
+        .insert(notificationT)
+        .values({
+          type: "like",
+          to: tweet.userId,
+          from: id,
+          tweetId: tweet.id,
+        })
+        .then(console.log)
+    )
 
   res.end()
 })
@@ -169,6 +201,14 @@ export const follow = catchAsync(async (req, res) => {
   const { userId } = req.params
 
   await db.insert(followT).values({ to: userId, from: id })
+
+  db.insert(notificationT)
+    .values({
+      type: "follow",
+      to: userId,
+      from: id,
+    })
+    .then(console.log)
 
   res.end()
 })
