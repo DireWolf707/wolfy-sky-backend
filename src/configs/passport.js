@@ -21,8 +21,6 @@ passport.use(
         if (!user) {
           const data = userSchema.parse({ email, name, username: slugify(`${name} ${randomString()}`) })
           user = (await db.insert(userT).values(data).returning())[0]
-          // self follow (until union availabe!)
-          await db.insert(followT).values({ to: user.id, from: user.id })
         }
         cb(null, user)
       } catch (err) {
