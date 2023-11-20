@@ -1,6 +1,6 @@
 import { catchAsync, roomKey } from "../utils"
 import { db, redis, storage } from "../configs"
-import { userT, followT, tweetT, likeT, notificationT, tweetSchema, alias, except } from "../drizzle/schema"
+import { userT, followT, tweetT, likeT, notificationT, tweetSchema, alias, except, union } from "../drizzle/schema"
 import { eq, ne, ilike, and, sql, desc } from "drizzle-orm"
 import { mediaInput } from "../validators"
 import { io } from "../socket"
@@ -13,6 +13,18 @@ export const getFeed = catchAsync(async (req, res) => {
   const parentTweetUserT = alias(userT, "ParentTweetUser")
   const parentTweetLikeT = alias(likeT, "ParentTweetLike")
 
+  const myTweet = db
+    .select({ ...tweetT })
+    .from(tweetT)
+    .where(eq(tweetT.userId, id))
+
+  const followingTweet = db
+    .select({ ...tweetT })
+    .from(followT)
+    .innerJoin(tweetT, and(eq(followT.from, id), eq(followT.to, tweetT.userId)))
+
+  const combinedTweet = union(myTweet, followingTweet).as("Tweet")
+
   const feed = await db
     .select({
       tweet: { ...tweetT, user: userT },
@@ -20,14 +32,13 @@ export const getFeed = catchAsync(async (req, res) => {
       parentTweet: { ...parentTweetT, user: parentTweetUserT },
       isParentTweetLiked: parentTweetLikeT,
     })
-    .from(followT)
-    .innerJoin(tweetT, and(eq(id, followT.from), eq(followT.to, tweetT.userId)))
-    .leftJoin(userT, eq(tweetT.userId, userT.id))
-    .leftJoin(likeT, and(eq(tweetT.id, likeT.tweetId), eq(likeT.userId, id)))
-    .leftJoin(parentTweetT, eq(tweetT.parentTweetId, parentTweetT.id))
+    .from(combinedTweet)
+    .leftJoin(userT, eq(combinedTweet.userId, userT.id))
+    .leftJoin(likeT, and(eq(combinedTweet.id, likeT.tweetId), eq(likeT.userId, id)))
+    .leftJoin(parentTweetT, eq(combinedTweet.parentTweetId, parentTweetT.id))
     .leftJoin(parentTweetUserT, eq(parentTweetT.userId, parentTweetUserT.id))
     .leftJoin(parentTweetLikeT, and(eq(parentTweetT.id, parentTweetLikeT.tweetId), eq(parentTweetLikeT.userId, id)))
-    .orderBy(desc(tweetT.createdAt))
+    .orderBy(desc(combinedTweet.createdAt))
 
   res.json({ data: feed })
 })
