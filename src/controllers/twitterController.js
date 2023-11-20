@@ -35,7 +35,7 @@ export const getFeed = catchAsync(async (req, res) => {
     .from(combinedTweet)
     .leftJoin(userT, eq(combinedTweet.userId, userT.id))
     .leftJoin(likeT, and(eq(combinedTweet.id, likeT.tweetId), eq(likeT.userId, id)))
-    .leftJoin(parentTweetT, eq(combinedTweet.parentTweetId, parentTweetT.id))
+    .leftJoin(parentTweetT, and(eq(combinedTweet.parentTweetId, parentTweetT.id), ne(combinedTweet.userId, id))) // parent tweet of only non-user tweets
     .leftJoin(parentTweetUserT, eq(parentTweetT.userId, parentTweetUserT.id))
     .leftJoin(parentTweetLikeT, and(eq(parentTweetT.id, parentTweetLikeT.tweetId), eq(parentTweetLikeT.userId, id)))
     .orderBy(desc(combinedTweet.createdAt))
