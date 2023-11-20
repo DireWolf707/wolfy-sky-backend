@@ -43,7 +43,7 @@ export const tweetT = pgTable(
     parentTweetRef: foreignKey({
       columns: [tweetT.parentTweetId],
       foreignColumns: [tweetT.id],
-    }),
+    }).onDelete("cascade"),
     userIdx: index("user_idx").on(tweetT.userId),
     parentTweetIdx: index("parent_tweet_idx").on(tweetT.parentTweetId),
   })
@@ -84,7 +84,7 @@ export const notificationT = pgTable(
     from: uuid("from")
       .notNull()
       .references(() => userT.id),
-    tweetId: uuid("tweet_id").references(() => tweetT.id),
+    tweetId: uuid("tweet_id").references(() => tweetT.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (notificationT) => ({
@@ -116,7 +116,7 @@ export const likeT = pgTable(
       .references(() => userT.id),
     tweetId: uuid("tweet_id")
       .notNull()
-      .references(() => tweetT.id),
+      .references(() => tweetT.id, { onDelete: "cascade" })
   },
   (likeT) => ({
     pk: primaryKey(likeT.userId, likeT.tweetId),
