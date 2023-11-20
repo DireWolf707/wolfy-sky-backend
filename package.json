@@ -7,7 +7,7 @@
   "license": "MIT",
   "type": "module",
   "engines": {
-    "node": "16.15.1"
+    "node": "^18.7.0"
   },
   "scripts": {
     "start": "node --experimental-specifier-resolution=node src/server.js",
@@ -16,12 +16,14 @@
     "db-makemigration": "drizzle-kit generate:pg --config src/drizzle/config.js",
     "db-migrate": "cross-env NODE_ENV=development node --experimental-specifier-resolution=node src/drizzle/migrate.js",
     "db-push": "yarn db-makemigration && yarn db-migrate",
-    "db-pull": "drizzle-kit introspect:pg --config src/drizzle/config.js"
+    "db-pull": "drizzle-kit introspect:pg --config src/drizzle/config.js",
+    "db-studio": "drizzle-kit studio --port 3001 --config src/drizzle/config.js"
   },
   "devDependencies": {
     "cross-env": "^7.0.3",
-    "drizzle-kit": "^0.18.0",
-    "nodemon": "^2.0.22"
+    "drizzle-kit": "^0.20.4",
+    "nodemon": "^2.0.22",
+    "pg": "^8.11.3"
   },
   "dependencies": {
     "@google-cloud/storage": "^6.9.5",
