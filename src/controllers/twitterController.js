@@ -1,6 +1,6 @@
 import { catchAsync, roomKey } from "../utils"
 import { db, redis, storage } from "../configs"
-import { userT, followT, tweetT, likeT, notificationT, tweetSchema, alias } from "../drizzle/schema"
+import { userT, followT, tweetT, likeT, notificationT, tweetSchema, alias, except } from "../drizzle/schema"
 import { eq, ne, ilike, and, sql, desc } from "drizzle-orm"
 import { mediaInput } from "../validators"
 import { io } from "../socket"
@@ -35,17 +35,25 @@ export const getFeed = catchAsync(async (req, res) => {
 export const getFollowRecomendations = catchAsync(async (req, res) => {
   const { id } = req.user
 
-  const f2fT = alias(followT, "followingToFollowing")
-  const whoToFollow = await db
-    .select({ ...userT })
+  const following = db
+    .select({ to: followT.to })
     .from(followT)
-    .innerJoin(f2fT, and(eq(id, followT.from), eq(followT.to, f2fT.from), ne(f2fT.from, f2fT.to), ne(f2fT.to, id)))
-    .leftJoin(userT, eq(f2fT.to, userT.id))
-    .groupBy(userT.id, f2fT.createdAt) // to get distinct users
-    .orderBy(desc(f2fT.createdAt))
-    .limit(4)
+    .where(eq(followT.from, id))
 
-  res.json({ data: whoToFollow })
+  const f2fT = alias(followT, "followingOfFollowing")
+  const followingOfFollowing = db
+    .select({ to: f2fT.to })
+    .from(followT)
+    .innerJoin(f2fT, and(eq(followT.from, id), eq(followT.to, f2fT.from), ne(f2fT.to, id)))
+
+  const filteredFollowingOfFollowing = except(followingOfFollowing, following).as("filteredFollowingOfFollowing")
+
+  const followRecomendations = await db
+    .select({ ...userT })
+    .from(filteredFollowingOfFollowing)
+    .leftJoin(userT, eq(filteredFollowingOfFollowing.to, userT.id))
+
+  res.json({ data: followRecomendations })
 })
 
 export const getTweet = catchAsync(async (req, res) => {
