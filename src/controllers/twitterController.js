@@ -35,7 +35,7 @@ export const getFeed = catchAsync(async (req, res) => {
     .from(combinedTweet)
     .leftJoin(userT, eq(combinedTweet.userId, userT.id))
     .leftJoin(likeT, and(eq(combinedTweet.id, likeT.tweetId), eq(likeT.userId, id)))
-    .leftJoin(parentTweetT, and(eq(combinedTweet.parentTweetId, parentTweetT.id), ne(combinedTweet.userId, id))) // parent tweet of only non-user tweets
+    .leftJoin(parentTweetT, eq(combinedTweet.parentTweetId, parentTweetT.id)) // parent tweet of only non-self tweets
     .leftJoin(parentTweetUserT, eq(parentTweetT.userId, parentTweetUserT.id))
     .leftJoin(parentTweetLikeT, and(eq(parentTweetT.id, parentTweetLikeT.tweetId), eq(parentTweetLikeT.userId, id)))
     .orderBy(desc(combinedTweet.createdAt))
@@ -85,7 +85,7 @@ export const getComments = catchAsync(async (req, res) => {
   const { tweetId } = req.params
 
   const comments = await db
-    .select({ ...tweetT, user: userT, isLiked: likeT })
+    .select({ tweet: { ...tweetT, user: userT }, isTweetLiked: likeT })
     .from(tweetT)
     .innerJoin(userT, and(eq(tweetId, tweetT.parentTweetId), eq(tweetT.userId, userT.id)))
     .leftJoin(likeT, and(eq(tweetT.id, likeT.tweetId), eq(likeT.userId, id)))
@@ -98,6 +98,10 @@ export const getPublicProfile = catchAsync(async (req, res) => {
   const { id } = req.user
   const { userId } = req.params
 
+  const parentTweetT = alias(tweetT, "ParentTweet")
+  const parentTweetUserT = alias(userT, "ParentTweetUser")
+  const parentTweetLikeT = alias(likeT, "ParentTweetLike")
+
   const userQ = db
     .select({
       ...userT,
@@ -108,20 +112,30 @@ export const getPublicProfile = catchAsync(async (req, res) => {
     .from(userT)
     .where(eq(userId, userT.id))
 
+  const myTweet = db
+    .select({ ...tweetT })
+    .from(tweetT)
+    .where(eq(tweetT.userId, userId))
+    .as("Tweet")
+
   const tweetsQ = db
     .select({
-      ...tweetT,
-      user: userT,
-      isLiked: likeT,
+      tweet: { ...tweetT, user: userT },
+      isTweetLiked: likeT,
+      parentTweet: { ...parentTweetT, user: parentTweetUserT },
+      isParentTweetLiked: parentTweetLikeT,
     })
-    .from(tweetT)
-    .innerJoin(userT, and(eq(userId, tweetT.userId), eq(tweetT.userId, userT.id)))
-    .leftJoin(likeT, and(eq(tweetT.id, likeT.tweetId), eq(likeT.userId, id)))
-    .orderBy(desc(tweetT.createdAt))
+    .from(myTweet)
+    .leftJoin(userT, eq(myTweet.userId, userT.id)) // redundant
+    .leftJoin(likeT, and(eq(myTweet.id, likeT.tweetId), eq(likeT.userId, id)))
+    .leftJoin(parentTweetT, eq(myTweet.parentTweetId, parentTweetT.id))
+    .leftJoin(parentTweetUserT, eq(parentTweetT.userId, parentTweetUserT.id))
+    .leftJoin(parentTweetLikeT, and(eq(parentTweetT.id, parentTweetLikeT.tweetId), eq(parentTweetLikeT.userId, id)))
+    .orderBy(desc(myTweet.createdAt))
 
-  const [[user], tweets] = await Promise.all([userQ, tweetsQ])
+  const [[profile], tweets] = await Promise.all([userQ, tweetsQ])
 
-  res.json({ data: { ...user, tweets } })
+  res.json({ data: { profile, tweets } })
 })
 
 export const getNotifications = catchAsync(async (req, res) => {
@@ -244,6 +258,14 @@ export const unlike = catchAsync(async (req, res) => {
     const key = roomKey("tweet", tweetId)
     const likes = await redis.hIncrBy(key, "likes", -1)
     io.in(key).emit(roomKey(key, "likes"), likes)
+    // remove notification
+    await db
+      .delete(notificationT)
+      .where(and(
+        eq(notificationT.type, "like"),
+        eq(notificationT.from, id),
+        eq(notificationT.tweetId, unlike.tweetId)
+      ))
   }
 
   res.end()
@@ -274,7 +296,18 @@ export const unfollow = catchAsync(async (req, res) => {
   // check for self follow
   if (id === userId) return res.status(400).end()
   // delete follow
-  await db.delete(followT).where(and(eq(followT.to, userId), eq(followT.from, id)))
+  const [unfollow] = await db.delete(followT).where(and(eq(followT.to, userId), eq(followT.from, id))).returning()
+  // if unfollow successful
+  if (unfollow) {
+    // remove notification
+    await db
+      .delete(notificationT)
+      .where(and(
+        eq(notificationT.type, "follow"),
+        eq(notificationT.from, id),
+        eq(notificationT.to, unfollow.to),
+      ))
+  }
 
   res.end()
 })
