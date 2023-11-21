@@ -35,7 +35,7 @@ export const tweetT = pgTable(
     mediaType: varchar("media_type", { length: 12, enum: ["img", "vid"] }),
     userId: uuid("user_id")
       .notNull()
-      .references(() => userT.id),
+      .references(() => userT.id, { onDelete: "cascade" }),
     parentTweetId: uuid("parent_tweet_id"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -80,10 +80,10 @@ export const notificationT = pgTable(
     type: varchar("type", { length: 12, enum: ["like", "comment", "follow"] }).notNull(),
     to: uuid("to")
       .notNull()
-      .references(() => userT.id),
+      .references(() => userT.id, { onDelete: "cascade" }),
     from: uuid("from")
       .notNull()
-      .references(() => userT.id),
+      .references(() => userT.id, { onDelete: "cascade" }),
     tweetId: uuid("tweet_id").references(() => tweetT.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -97,10 +97,10 @@ export const followT = pgTable(
   {
     to: uuid("to")
       .notNull()
-      .references(() => userT.id),
+      .references(() => userT.id, { onDelete: "cascade" }),
     from: uuid("from")
       .notNull()
-      .references(() => userT.id),
+      .references(() => userT.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (followT) => ({
@@ -113,7 +113,7 @@ export const likeT = pgTable(
   {
     userId: uuid("user_id")
       .notNull()
-      .references(() => userT.id),
+      .references(() => userT.id, { onDelete: "cascade" }),
     tweetId: uuid("tweet_id")
       .notNull()
       .references(() => tweetT.id, { onDelete: "cascade" })
